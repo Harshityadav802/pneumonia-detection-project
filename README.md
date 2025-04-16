@@ -1,11 +1,3 @@
-title: Pneumonia Detection with CNN
-emoji: 🫁
-colorFrom: blue
-colorTo: purple
-sdk: gradio
-sdk_version: "4.26.0"
-app_file: app.py
-pinned: false
 
 # Pneumonia Detection from Chest X-rays
 
