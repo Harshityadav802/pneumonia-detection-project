@@ -3,8 +3,9 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from PIL import Image
+import os
 
-# Define the same CNN model
+# Define CNN model
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
@@ -32,23 +33,48 @@ class CNN(nn.Module):
 # Load model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CNN().to(device)
-model.load_state_dict(torch.load("model.pth", map_location=device))
-model.eval()
 
-# Transform
+try:
+    model.load_state_dict(torch.load("cnn_pneumonia_model.pth", map_location=device))
+    model.eval()
+except Exception as e:
+    print("❌ Failed to load model:", e)
+    exit()
+
+# Image transforms
 transform = transforms.Compose([
     transforms.Resize((150, 150)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5])
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
 # Prediction function
 def predict(image):
-    image = transform(image).unsqueeze(0).to(device)
-    with torch.no_grad():
-        output = model(image)
-        prob = torch.sigmoid(output).item()
-    return {"PNEUMONIA": prob, "NORMAL": 1 - prob}
+    try:
+        image = transform(image.convert("RGB")).unsqueeze(0).to(device)
+        with torch.no_grad():
+            output = model(image).squeeze()
+            prob = torch.sigmoid(output).item()
+        return {"PNEUMONIA": prob, "NORMAL": 1 - prob}
+    except Exception as e:
+        return {"Error": str(e)}
+
+# Optional test with image.jpg, then delete it
+uploaded_image_path = "image.jpg"
+if os.path.exists(uploaded_image_path):
+    print("🔍 Testing uploaded image before Gradio launch...")
+    try:
+        test_img = Image.open(uploaded_image_path).convert("RGB")
+        result = predict(test_img)
+        print("📊 Prediction result:", result)
+    except Exception as e:
+        print("❌ Error during test:", e)
+    finally:
+        try:
+            os.remove(uploaded_image_path)
+            print("🗑️ image.jpg deleted after test.")
+        except Exception as cleanup_error:
+            print("⚠️ Failed to delete image.jpg:", cleanup_error)
 
 # Gradio UI
 interface = gr.Interface(
@@ -59,4 +85,5 @@ interface = gr.Interface(
     description="Upload a chest X-ray image to see if the model detects signs of pneumonia."
 )
 
-interface.launch()
+# Launch Gradio app
+interface.launch(debug=True, share=True)
