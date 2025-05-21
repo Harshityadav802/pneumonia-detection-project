@@ -39,6 +39,8 @@ A simple CNN architecture:
 **Test Accuracy**: ~92%
 
 ---
+### Demo 
+Try it on -[https://huggingface.co/spaces/Harry802/pneumonia-xray-detector]
 
 ##  Getting Started
 
