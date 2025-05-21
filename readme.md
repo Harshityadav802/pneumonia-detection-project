@@ -45,7 +45,7 @@ A simple CNN architecture:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/pneumonia-detection-cnn.git
+git clone https://github.com/Harshityadav802/pneumonia-detection-cnn.git
 cd pneumonia-detection-cnn
 ```
 
