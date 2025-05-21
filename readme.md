@@ -1,4 +1,4 @@
-# 🫁 Pneumonia Detection from Chest X-rays using CNN
+#  Pneumonia Detection from Chest X-rays using CNN
 
 This project implements a **Convolutional Neural Network (CNN)** to detect **pneumonia** from chest X-ray images using the [**Kaggle Chest X-ray Pneumonia Dataset**](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia). The model is built with **PyTorch** and deployed using a **Gradio** web interface for real-time predictions.
 
@@ -6,7 +6,7 @@ This project implements a **Convolutional Neural Network (CNN)** to detect **pne
 
 ---
 
-## 🔍 Overview
+##  Overview
 
 - **Problem**: Automate the detection of pneumonia from X-ray images
 - **Solution**: CNN model trained on labeled chest X-ray data
@@ -15,7 +15,7 @@ This project implements a **Convolutional Neural Network (CNN)** to detect **pne
 
 ---
 
-## 🗂️ Dataset
+##  Dataset
 
 - **Source**: [Kaggle Chest X-ray Pneumonia Dataset](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia)
 - **Structure**:
@@ -29,7 +29,7 @@ This project implements a **Convolutional Neural Network (CNN)** to detect **pne
 
 ---
 
-## 🧠 Model Architecture
+##  Model Architecture
 
 A simple CNN architecture:
 - 2 Convolutional layers with ReLU + MaxPooling
@@ -40,7 +40,7 @@ A simple CNN architecture:
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### 1. Clone the Repository
 
@@ -78,7 +78,7 @@ A Gradio web UI will launch for uploading X-ray images and getting predictions.
 
 ---
 
-## 🎯 Results
+##  Results
 
 | Metric     | Value  |
 |------------|--------|
@@ -88,14 +88,14 @@ A Gradio web UI will launch for uploading X-ray images and getting predictions.
 
 ---
 
-## 🌐 Gradio Demo Features
+##  Gradio Demo Features
 
 - Upload a chest X-ray image
 - Instantly receive prediction: **Normal** or **Pneumonia**
 
 ---
 
-## 👤 Author
+##  Author
 
 ### Harshit Yadav  
 **BTech 2nd Year Student | AI & Data Enthusiast**  
@@ -104,7 +104,7 @@ A Gradio web UI will launch for uploading X-ray images and getting predictions.
 
 ---
 
-## 📜 License
+##  License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
