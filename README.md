@@ -1,14 +1,3 @@
----
-title: Pneumonia Detection with CNN
-emoji: 🚀
-colorFrom: blue
-colorTo: purple
-sdk: gradio
-sdk_version: 5.26.0
-app_file: app.py
-pinned: false
-license: mit
----
 # 🫁 Pneumonia Detection from Chest X-rays
 
 A deep learning-powered web app to detect **pneumonia** from chest X-ray images using a custom-trained CNN built with PyTorch, served through a Gradio interface.
