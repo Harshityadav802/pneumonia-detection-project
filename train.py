@@ -69,7 +69,8 @@ def show_sample_images(df, n=5):
         axes[i].set_title(df.iloc[i]['label'])
         axes[i].axis('off')
     plt.tight_layout()
-    plt.show()
+    plt.savefig("sample_images.png")
+    plt.close()
 
 show_sample_images(df)
 
@@ -174,7 +175,8 @@ def evaluate_model(model, test_loader, device, lb):
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
     plt.title("Confusion Matrix")
-    plt.show()
+    plt.savefig("confusion_matrix.png")
+    plt.close()
 
 evaluate_model(model, test_loader, device, lb)
 

@@ -3,4 +3,3 @@ torchvision
 gradio
 pandas
 numpy
-pytorch
