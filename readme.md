@@ -48,7 +48,7 @@ A simple CNN architecture is used:
 
 ---
 ### Demo 
-Try it on -[https://huggingface.co/spaces/Harry802/pneumonia-xray-detector] (External link, may refer to the original, unmodified version of the project).
+Try it on -[https://huggingface.co/spaces/Harry802/pneumonia-xray-detector].
 
 ##  Getting Started
 
