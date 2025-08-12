@@ -1,5 +1,4 @@
 # pneumonia_detection_cnn.py
-
 import os
 import glob
 import argparse
@@ -10,25 +9,27 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_auc_score
-from tqdm import tqdm
 
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms as transforms
-from torchvision import datasets
+from torchvision import datasets, models
 from PIL import Image
 
-
 # Argument Parser
-parser = argparse.ArgumentParser(description="Chest X-ray Pneumonia Detection")
+parser = argparse.ArgumentParser(description="Chest X-ray Pneumonia Detection with ResNet + Grad-CAM")
 parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
-parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
+parser.add_argument('--epochs', type=int, default=20, help='Number of training epochs')
 args = parser.parse_args()
 
+# ===============================
 # Dataset Setup
-dataset_path = "./chest_xray_pneumonia"
+# ===============================
+dataset_path = "C:/Users/harsh/Documents/Program/python/Project/chest_xray_pneumonia"
 os.makedirs(dataset_path, exist_ok=True)
 
 if not os.path.exists(os.path.join(dataset_path, "chest_xray")):
@@ -41,7 +42,6 @@ test_dir = os.path.join(dataset_path, "chest_xray", "test")
 if not os.path.exists(train_dir) or not os.path.exists(test_dir):
     raise FileNotFoundError("Dataset not found. Please check the download path.")
 
-# Load Data
 categories = ["NORMAL", "PNEUMONIA"]
 
 def load_image_paths_labels(base_dir, categories):
@@ -54,33 +54,33 @@ def load_image_paths_labels(base_dir, categories):
     return pd.DataFrame({"image_path": data, "label": labels})
 
 df = load_image_paths_labels(train_dir, categories)
-print(f"\n Loaded {len(df)} images")
+print(f"\nLoaded {len(df)} images")
 
+# Train/Val/Test Split
 lb = LabelBinarizer()
 y = lb.fit_transform(df["label"]).flatten()
-X_train, X_test, y_train, y_test = train_test_split(df["image_path"], y, test_size=0.2, random_state=42, stratify=y)
+X_train, X_temp, y_train, y_temp = train_test_split(df["image_path"], y, test_size=0.3, stratify=y, random_state=42)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, stratify=y_temp, random_state=42)
 
-# Visualize Sample Images
-def show_sample_images(df, n=5):
-    fig, axes = plt.subplots(1, n, figsize=(15, 5))
-    for i in range(n):
-        img = Image.open(df.iloc[i]['image_path'])
-        axes[i].imshow(img.convert("L"), cmap="gray")
-        axes[i].set_title(df.iloc[i]['label'])
-        axes[i].axis('off')
-    plt.tight_layout()
-    plt.savefig("sample_images.png")
-    plt.close()
-
-show_sample_images(df)
-
-# PyTorch Dataset and Transforms
-data_transform = transforms.Compose([
-    transforms.Resize((150, 150)),
+# Data Augmentation
+train_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(10),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
 ])
 
+val_test_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
+])
+
+# Dataset Class
 class ChestXRayDataset(Dataset):
     def __init__(self, image_paths, labels, transform=None):
         self.image_paths = image_paths.values
@@ -97,50 +97,34 @@ class ChestXRayDataset(Dataset):
         return img, self.labels[idx]
 
 # Data Loaders
-dataset_train = ChestXRayDataset(X_train, y_train, transform=data_transform)
-dataset_test = ChestXRayDataset(X_test, y_test, transform=data_transform)
-train_loader = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True)
-test_loader = DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False)
-
-
-# CNN Model
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(128)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.dropout = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(128 * 18 * 18, 128)
-        self.fc2 = nn.Linear(128, 1)
-
-    def forward(self, x):
-        x = self.pool(self.relu(self.bn1(self.conv1(x))))
-        x = self.pool(self.relu(self.bn2(self.conv2(x))))
-        x = self.pool(self.relu(self.bn3(self.conv3(x))))
-        x = x.view(x.size(0), -1)
-        x = self.dropout(self.relu(self.fc1(x)))
-        x = self.fc2(x)
-        return x
-
-# Training Setup
+train_loader = DataLoader(ChestXRayDataset(X_train, y_train, train_transform),
+                          batch_size=args.batch_size, shuffle=True)
+val_loader = DataLoader(ChestXRayDataset(X_val, y_val, val_test_transform),
+                        batch_size=args.batch_size, shuffle=False)
+test_loader = DataLoader(ChestXRayDataset(X_test, y_test, val_test_transform),
+                         batch_size=args.batch_size, shuffle=False)
+# Model (Transfer Learning ResNet18)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = CNN().to(device)
+model = models.resnet18(pretrained=True)
+model.fc = nn.Linear(model.fc.in_features, 1)
+model = model.to(device)
+
 pos_weight = torch.tensor([sum(y_train == 0) / sum(y_train == 1)]).to(device)
 criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
 
+# TensorBoard
+writer = SummaryWriter()
+# Training Loop with Early Stopping
+best_loss = float("inf")
+patience = 5
+trials = 0
 
-# Training Loop
 for epoch in range(args.epochs):
+    # Training
     model.train()
-    total_loss = 0
+    train_loss = 0
     for batch_X, batch_y in tqdm(train_loader, desc=f"Epoch {epoch+1}/{args.epochs}"):
         batch_X, batch_y = batch_X.to(device), batch_y.to(device).unsqueeze(1)
         optimizer.zero_grad()
@@ -148,38 +132,62 @@ for epoch in range(args.epochs):
         loss = criterion(outputs, batch_y)
         loss.backward()
         optimizer.step()
-        total_loss += loss.item()
-    scheduler.step()
-    print(f"Loss: {total_loss/len(train_loader):.6f}")
+        train_loss += loss.item()
 
-# Evaluation Function
-def evaluate_model(model, test_loader, device, lb):
+    train_loss /= len(train_loader)
+
+    # Validation
+    val_loss = 0
+    model.eval()
+    with torch.no_grad():
+        for X_val_batch, y_val_batch in val_loader:
+            X_val_batch, y_val_batch = X_val_batch.to(device), y_val_batch.to(device).unsqueeze(1)
+            outputs = model(X_val_batch)
+            val_loss += criterion(outputs, y_val_batch).item()
+    val_loss /= len(val_loader)
+
+    print(f"Epoch {epoch+1}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}")
+
+    writer.add_scalar("Loss/train", train_loss, epoch)
+    writer.add_scalar("Loss/val", val_loss, epoch)
+
+    scheduler.step()
+
+    if val_loss < best_loss:
+        best_loss = val_loss
+        torch.save(model.state_dict(), "best_model.pth")
+        trials = 0
+    else:
+        trials += 1
+        if trials >= patience:
+            print("Early stopping triggered.")
+            break
+
+writer.close()
+
+# Evaluation
+def evaluate_model(model, loader, device, lb):
     model.eval()
     y_pred, y_true = [], []
     with torch.no_grad():
-        for batch_X, batch_y in test_loader:
+        for batch_X, batch_y in loader:
             batch_X, batch_y = batch_X.to(device), batch_y.to(device).unsqueeze(1)
             outputs = torch.sigmoid(model(batch_X))
             y_pred.append((outputs > 0.5).cpu().numpy())
             y_true.append(batch_y.cpu().numpy())
-
     y_pred = np.vstack(y_pred)
     y_true = np.vstack(y_true)
-    print("\n Evaluation Complete")
+
     print("Accuracy:", accuracy_score(y_true, y_pred))
     print("ROC AUC Score:", roc_auc_score(y_true, y_pred))
     print(classification_report(y_true, y_pred, target_names=lb.classes_))
 
     cm = confusion_matrix(y_true, y_pred)
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=lb.classes_, yticklabels=lb.classes_)
-    plt.xlabel("Predicted")
-    plt.ylabel("Actual")
-    plt.title("Confusion Matrix")
     plt.savefig("confusion_matrix.png")
     plt.close()
 
+# Load best model and evaluate on test set
+model.load_state_dict(torch.load("best_model.pth"))
 evaluate_model(model, test_loader, device, lb)
-
-# Save Model
-torch.save(model.state_dict(), "cnn_pneumonia_model.pth")
-print("\n Model saved as cnn_pneumonia_model.pth")
+print("Best model saved as best_model.pth")
