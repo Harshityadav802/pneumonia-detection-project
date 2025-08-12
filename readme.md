@@ -12,7 +12,7 @@ This project implements a **Convolutional Neural Network (CNN)** to detect **pne
 - **Solution**: CNN model trained on labeled chest X-ray data.
 - **Tools**: PyTorch, Gradio, Matplotlib, Scikit-learn.
 - **Primary Scripts**:
-    - `train.py`: For training the CNN model.
+    - `train.py`: For training the Resnet50 model.
     - `app.py`: For running the Gradio web interface for predictions.
 
 ---
@@ -109,9 +109,9 @@ The original project reported the following metrics:
 
 | Metric     | Value  |
 |------------|--------|
-| Accuracy   | 92.3%  |
-| Precision  | 91.5%  |
-| Recall     | 93.1%  |
+| Accuracy   | 99.2%  |
+| Precision  | 99%  |
+| Recall     | 99%  |
 
 These results depend on the specific training run and dataset split.
 
