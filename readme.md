@@ -1,19 +1,15 @@
-#  Pneumonia Detection from Chest X-rays using CNN
+# Pneumonia Detection from Chest X-rays (ResNet18 + Grad-CAM)
 
-This project implements a **Convolutional Neural Network (CNN)** to detect **pneumonia** from chest X-ray images using the [**Kaggle Chest X-ray Pneumonia Dataset**](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia). The model is built with **PyTorch** and includes a **Gradio** web interface for real-time predictions.
-
-![demo](assets/demo.gif) <!-- Optional: Add a demo image or remove this line -->
+This project detects **pneumonia** from chest X-ray images using a **fine-tuned ResNet18 model** built with **PyTorch**.  
+It also provides a **Grad-CAM heatmap** to highlight which parts of the X-ray influenced the prediction, helping with interpretability.
 
 ---
 
-##  Overview
-
-- **Problem**: Automate the detection of pneumonia from X-ray images.
-- **Solution**: CNN model trained on labeled chest X-ray data.
-- **Tools**: PyTorch, Gradio, Matplotlib, Scikit-learn.
-- **Primary Scripts**:
-    - `train.py`: For training the Resnet18 model.
-    - `app.py`: For running the Gradio web interface for predictions.
+##  Features
+- **High Accuracy** binary classification: Pneumonia vs Normal.
+- **Grad-CAM visualization** for model explainability.
+- **Interactive Gradio app** — upload an X-ray and instantly get a prediction with heatmap.
+- **Class imbalance handling** and **data augmentation** for robust results.
 
 ---
 
@@ -35,13 +31,13 @@ This project implements a **Convolutional Neural Network (CNN)** to detect **pne
 
 ---
 
-##  Model Architecture
-
-Resnet18 CNN model(ImageNet) is used.
-BceWithlogitloss is for stop class imbalance.
-
-
-**Note**: The model expects 3-channel (RGB) images as input.
+## 🏗 Model Architecture
+- **Base Model**: ResNet18 (pretrained=False)
+- **Final Layer**: Fully connected layer with 1 output neuron (sigmoid activation for binary classification)
+- **Loss Function**: Binary Cross Entropy with Logits
+- **Optimizer**: Adam
+- **Learning Rate Scheduler**: StepLR
+- **Data Augmentation**: Random rotation, horizontal flip, normalization
 
 **Test Accuracy**: Achieved ~99% on the test set (as per original readme).
 
@@ -113,16 +109,18 @@ The original project reported the following metrics:
 | Recall     | 99%  |
 
 These results depend on the specific training run and dataset split.
+
 Confusion Matrix after training the model - 
 <img width="640" height="480" alt="confusion_matrix" src="https://github.com/user-attachments/assets/b2882ef1-510d-48ce-9a16-0855c4250736" />
 
 ---
+## 📊 Example Output
+Prediction: **PNEUMONIA (99% confidence)**  
+Grad-CAM heatmap showing regions of interest in red/yellow overlaid on the X-ray.
+Example of a Image
+![CXRNLPA_1250](https://github.com/user-attachments/assets/13999db7-390f-4311-8939-1bdcbbf60e62)
+Output - <img width="224" height="224" alt="image" src="https://github.com/user-attachments/assets/79ebdec4-7811-42d3-844c-cc71f1ce0029" />
 
-##  Gradio Demo Features
-
-- Upload a chest X-ray image.
-- Instantly receive a prediction: **PNEUMONIA** or **NORMAL**, along with confidence scores.
-- Grad-cam heatmap which tell which parts has highest probability of telling the result if it's pneumonia or normal.
 
 ---
 
