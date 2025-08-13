@@ -122,6 +122,7 @@ Confusion Matrix after training the model -
 
 - Upload a chest X-ray image.
 - Instantly receive a prediction: **PNEUMONIA** or **NORMAL**, along with confidence scores.
+- Grad-cam heatmap which tell which parts has highest probability of telling the result if it's pneumonia or normal.
 
 ---
 
