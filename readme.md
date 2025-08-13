@@ -12,7 +12,7 @@ This project implements a **Convolutional Neural Network (CNN)** to detect **pne
 - **Solution**: CNN model trained on labeled chest X-ray data.
 - **Tools**: PyTorch, Gradio, Matplotlib, Scikit-learn.
 - **Primary Scripts**:
-    - `train.py`: For training the Resnet50 model.
+    - `train.py`: For training the Resnet18 model.
     - `app.py`: For running the Gradio web interface for predictions.
 
 ---
@@ -37,10 +37,9 @@ This project implements a **Convolutional Neural Network (CNN)** to detect **pne
 
 ##  Model Architecture
 
-A simple CNN architecture is used:
-- Convolutional layers with ReLU activation and MaxPooling.
-- Fully Connected layers.
-- Sigmoid output for binary classification (Normal vs Pneumonia).
+Resnet18 CNN model(ImageNet) is used.
+BceWithlogitloss is for stop class imbalance.
+
 
 **Note**: The model expects 3-channel (RGB) images as input.
 
