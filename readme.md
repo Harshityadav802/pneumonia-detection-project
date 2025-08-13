@@ -113,6 +113,8 @@ The original project reported the following metrics:
 | Recall     | 99%  |
 
 These results depend on the specific training run and dataset split.
+Confusion Matrix after training the model - 
+<img width="640" height="480" alt="confusion_matrix" src="https://github.com/user-attachments/assets/b2882ef1-510d-48ce-9a16-0855c4250736" />
 
 ---
 
