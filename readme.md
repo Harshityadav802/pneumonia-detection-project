@@ -31,7 +31,7 @@ It also provides a **Grad-CAM heatmap** to highlight which parts of the X-ray in
 
 ---
 
-## 🏗 Model Architecture
+##  Model Architecture
 - **Base Model**: ResNet18 (pretrained=False)
 - **Final Layer**: Fully connected layer with 1 output neuron (sigmoid activation for binary classification)
 - **Loss Function**: Binary Cross Entropy with Logits
@@ -114,7 +114,7 @@ Confusion Matrix after training the model -
 <img width="640" height="480" alt="confusion_matrix" src="https://github.com/user-attachments/assets/b2882ef1-510d-48ce-9a16-0855c4250736" />
 
 ---
-## 📊 Example Output
+##  Example Output
 Prediction: **PNEUMONIA (99% confidence)**  
 Grad-CAM heatmap showing regions of interest in red/yellow overlaid on the X-ray.
 Example of a Image
