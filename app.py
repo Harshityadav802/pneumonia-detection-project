@@ -2,71 +2,108 @@ import gradio as gr
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+from torchvision import models
 from PIL import Image
-import os
+import numpy as np
+import cv2
 
-# Define CNN model
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(128)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.dropout = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(128 * 18 * 18, 128)
-        self.fc2 = nn.Linear(128, 1)
 
-    def forward(self, x):
-        x = self.pool(self.relu(self.bn1(self.conv1(x))))
-        x = self.pool(self.relu(self.bn2(self.conv2(x))))
-        x = self.pool(self.relu(self.bn3(self.conv3(x))))
-        x = x.view(x.size(0), -1)
-        x = self.dropout(self.relu(self.fc1(x)))
-        x = self.fc2(x)
-        return x
-
-# Load model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = CNN().to(device)
 
-try:
-    model.load_state_dict(torch.load("cnn_pneumonia_model.pth", map_location=device))
-    model.eval()
-except Exception as e:
-    print("Failed to load model:", e)
-    exit()
+#Load ResNet18
+
+model = models.resnet18(pretrained=False)
+model.fc = nn.Linear(model.fc.in_features, 1)
+model.load_state_dict(torch.load("best_model.pth", map_location=device))
+model = model.to(device)
+model.eval()
+
 
 # Image transforms
+
 transform = transforms.Compose([
-    transforms.Resize((150, 150)),
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
 ])
 
-# Prediction function
-def predict(image):
-    try:
-        image = transform(image.convert("RGB")).unsqueeze(0).to(device)
-        with torch.no_grad():
-            output = model(image).squeeze()
-            prob = torch.sigmoid(output).item()
-        return {"PNEUMONIA": prob, "NORMAL": 1 - prob}
-    except Exception as e:
-        return {"Error": str(e)}
 
-# Gradio UI
+# Grad-CAM Hook
+
+final_conv_layer = model.layer4[1].conv2
+activations = None
+gradients = None
+
+def save_activation(module, input, output):
+    global activations
+    activations = output.detach()
+
+def save_gradient(module, grad_input, grad_output):
+    global gradients
+    gradients = grad_output[0].detach()
+
+final_conv_layer.register_forward_hook(save_activation)
+final_conv_layer.register_backward_hook(save_gradient)
+
+def generate_gradcam(img_tensor, class_idx):
+    global activations, gradients
+    activations = None
+    gradients = None
+
+    # Forward pass
+    output = model(img_tensor)
+    prob = torch.sigmoid(output).item()
+    
+    # Backward pass for Grad-CAM
+    model.zero_grad()
+    output.backward(torch.ones_like(output))
+    
+    # Compute Grad-CAM
+    pooled_grads = torch.mean(gradients, dim=[0, 2, 3])
+    for i in range(activations.shape[1]):
+        activations[:, i, :, :] *= pooled_grads[i]
+    heatmap = torch.mean(activations, dim=1).squeeze()
+    heatmap = np.maximum(heatmap.cpu(), 0)
+    heatmap /= torch.max(heatmap)
+
+    # Resize heatmap to original image size
+    heatmap = cv2.resize(heatmap.numpy(), (224, 224))
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    return heatmap, prob
+
+
+def predict_with_heatmap(image):
+    try:
+        # Prepare input
+        img_resized = image.resize((224, 224))
+        img_tensor = transform(img_resized.convert("RGB")).unsqueeze(0).to(device)
+
+        # Generate Grad-CAM
+        heatmap, prob = generate_gradcam(img_tensor, class_idx=0)
+
+        # Overlay heatmap on original
+        img_np = np.array(img_resized)
+        overlay = cv2.addWeighted(img_np, 0.6, heatmap, 0.4, 0)
+
+        return {"PNEUMONIA": prob, "NORMAL": 1 - prob}, overlay
+    except Exception as e:
+        return {"Error": str(e)}, None
+
+
+
+
 interface = gr.Interface(
-    fn=predict,
+    fn=predict_with_heatmap,
     inputs=gr.Image(type="pil"),
-    outputs=gr.Label(num_top_classes=2),
-    title="Pneumonia Detection from Chest X-ray",
-    description="Upload a chest X-ray image to see if the model detects signs of pneumonia."
+    outputs=[
+        gr.Label(num_top_classes=2),
+        gr.Image(type="numpy", label="Grad-CAM Heatmap")
+    ],
+    title="Pneumonia Detection with Grad-CAM (ResNet18)",
+    description="Upload a chest X-ray image. The model predicts pneumonia probability and shows a Grad-CAM heatmap highlighting important regions."
 )
 
-# Launch Gradio app
-interface.launch(debug=True, share=True)
+if __name__ == "__main__":
+    interface.launch(debug=True, share=True)
