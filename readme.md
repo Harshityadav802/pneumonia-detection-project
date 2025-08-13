@@ -43,7 +43,7 @@ BceWithlogitloss is for stop class imbalance.
 
 **Note**: The model expects 3-channel (RGB) images as input.
 
-**Test Accuracy**: Achieved ~92% on the test set (as per original readme).
+**Test Accuracy**: Achieved ~99% on the test set (as per original readme).
 
 ---
 ### Demo 
