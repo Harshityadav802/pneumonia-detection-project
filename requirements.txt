@@ -1,5 +1,8 @@
 torch
 torchvision
-gradio
 pandas
 numpy
+pillow
+uvicorn
+fastapi
+
