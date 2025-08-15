@@ -5,13 +5,12 @@ from torchvision import models, transforms
 from PIL import Image
 import io
 
-# Initialize FastAPI app
-app = FastAPI()
+app = FastAPI(title="Pneumonia Detection API")
 
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load model
+# Load ResNet18 model
 model = models.resnet18(pretrained=False)
 model.fc = nn.Linear(model.fc.in_features, 1)
 model.load_state_dict(torch.load("best_model.pth", map_location=device))
@@ -33,10 +32,14 @@ async def predict(file: UploadFile = File(...)):
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     image = transform(image).unsqueeze(0).to(device)
 
-    # Make prediction
-  with torch.no_grad():
+    # Prediction
+    with torch.no_grad():
         output = torch.sigmoid(model(image))
         prob = output.item()
         label = "PNEUMONIA" if prob > 0.5 else "NORMAL"
 
-    return {"prediction": label, "confidence": round(prob * 100, 2)}
+    return {
+        "prediction": label,
+        "confidence": round(prob * 100, 2)
+    }
+
