@@ -32,7 +32,7 @@ It also provides a **Grad-CAM heatmap** to highlight which parts of the X-ray in
 ---
 
 ##  Model Architecture
-- **Base Model**: ResNet18 (pretrained=False)
+- **Base Model**: ResNet18 (pretrained=True on ImageNet)
 - **Final Layer**: Fully connected layer with 1 output neuron (sigmoid activation for binary classification)
 - **Loss Function**: Binary Cross Entropy with Logits
 - **Optimizer**: Adam
@@ -80,21 +80,37 @@ This script will:
 - Load the data from `./chest_xray_pneumonia/chest_xray/train` and `./chest_xray_pneumonia/chest_xray/test`.
 - Preprocess the images.
 - Train the CNN model.
-- Save the trained model weights to `cnn_pneumonia_model.pth` in the project root.
-- Save sample images and a confusion matrix plot (`sample_images.png`, `confusion_matrix.png`).
+- Save the trained model weights to `best_model.pth` in the project root.
+- Save a confusion matrix plot to `confusion_matrix.png`.
 
 You can adjust batch size and epochs using command-line arguments:
 ```bash
 python train.py --epochs 15 --batch_size 32
 ```
 
-### 5. Run the Gradio App
+### 5. Run the Applications
 
-Once the model is trained and `cnn_pneumonia_model.pth` is present, you can run the Gradio interface:
+This project provides two ways to interact with the model: a Gradio web interface and a FastAPI backend.
+
+#### A. Run the Gradio App
+
+The Gradio app provides an interactive interface to upload an image and see the prediction with a Grad-CAM heatmap.
+
+To run the Gradio app:
 ```bash
 python app.py
 ```
-This will launch a local web server. Open the provided URL in your browser to upload chest X-ray images and get pneumonia predictions.
+This will launch a local web server. Open the provided URL in your browser.
+
+#### B. Run the FastAPI Server
+
+The FastAPI server provides a programmatic API endpoint to get predictions.
+
+To run the FastAPI server:
+```bash
+uvicorn main:app --reload
+```
+The API will be available at `http://127.0.0.1:8000`. You can send a POST request with an image file to the `/predict` endpoint to get a prediction. You can see the auto-generated documentation at `http://127.0.0.1:8000/docs`.
 
 ---
 
