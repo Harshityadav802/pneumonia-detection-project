@@ -3,9 +3,7 @@ torchvision
 pandas
 numpy
 pillow
-uvicorn
-fastapi
-python-multipart
+
 
 
 
