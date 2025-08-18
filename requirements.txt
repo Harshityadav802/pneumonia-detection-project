@@ -5,3 +5,6 @@ pandas
 numpy
 pillow
 gradio
+fastapi
+uvicorn
+python-multipart

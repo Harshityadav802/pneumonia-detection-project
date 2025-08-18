@@ -29,18 +29,19 @@ args = parser.parse_args()
 # ===============================
 # Dataset Setup
 # ===============================
-dataset_path = "C:/Users/harsh/Documents/Program/python/Project/chest_xray_pneumonia"
-os.makedirs(dataset_path, exist_ok=True)
-
-if not os.path.exists(os.path.join(dataset_path, "chest_xray")):
-    os.system(f"kaggle datasets download -d paultimothymooney/chest-xray-pneumonia -p {dataset_path} --unzip")
-else:
-    print("Dataset already exists. Skipping download.")
+# Path to the dataset, expected to be in the project root as per the readme
+dataset_path = "chest_xray_pneumonia/"
 
 train_dir = os.path.join(dataset_path, "chest_xray", "train")
 test_dir = os.path.join(dataset_path, "chest_xray", "test")
-if not os.path.exists(train_dir) or not os.path.exists(test_dir):
-    raise FileNotFoundError("Dataset not found. Please check the download path.")
+
+# Check if the dataset exists before proceeding
+if not os.path.isdir(train_dir) or not os.path.isdir(test_dir):
+    raise FileNotFoundError(
+        f"Training or testing directory not found. "
+        f"Please ensure the dataset is downloaded from Kaggle and placed in the '{dataset_path}' directory, "
+        f"following the structure specified in the readme.md."
+    )
 
 categories = ["NORMAL", "PNEUMONIA"]
 
